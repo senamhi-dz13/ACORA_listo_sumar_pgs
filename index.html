@@ -52,6 +52,17 @@
       }).openTooltip();
       marcadores.push({ ...est, marker });
     });
+// Buscar estación San Gaban y asignar popup con imagen
+const sanGaban = marcadores.find(m => m.nombre === "San Gaban");
+if (sanGaban) {
+  const popupSanGaban = `
+    <div style="text-align:center;">
+      <strong>Reporte diario - San Gaban</strong><br>
+      <img src="https://raw.githubusercontent.com/senamhi-dz13/Reporte_diario-/refs/heads/main/ACORA.jpg" alt="San Gaban" style="max-width:100%; height:auto; margin-top:5px;" />
+    </div>
+  `;
+  sanGaban.marker.bindPopup(popupSanGaban);
+}
 
     function distancia(lat1, lon1, lat2, lon2) {
       const R = 6371e3;
@@ -105,16 +116,7 @@
           iconSize: [32, 32],
           iconAnchor: [16, 32]
         }));
-
-        // Mostrar popup con información desde web
-        const popupContent = `
-          <div style="text-align:center;">
-          <strong>Reporte diario - ACORA</strong><br>
-          <img src="https://raw.githubusercontent.com/senamhi-dz13/Reporte_diario-/refs/heads/main/ACORA.jpg" alt="ACORA" style="max-width:100%; height:auto; margin-top:5px;" />
-          </div>
-        `;
-
-        masCercano.marker.bindPopup(popupContent).openPopup();
+       
       }
     });
 
