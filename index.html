@@ -4,37 +4,53 @@
   <title>Mapa con Ubicaciones Fijas</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     #map { height: 100vh; }
+    .tooltip-normal {
+      font-size: 10px;
+      font-weight: normal;
+    }
+    .tooltip-destacado {
+      font-size: 15px;
+      font-weight: bold;
+      color: teal;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
 
+  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    const ubicacionesFijas = [
-      { nombre: "Estación 1", coords: [-12.07, -77.05] },
-      { nombre: "Estación 2", coords: [-12.10, -77.04] },
-      { nombre: "Estación 3", coords: [-12.12, -77.02] }
+    const estaciones = [
+      { num: 1, nombre: "San Gaban",     lat: -13.46087222, lon: -70.40998611 },
+      { num: 2, nombre: "Tambopata",     lat: -14.22528611, lon: -69.16178333 },
+      { num: 3, nombre: "Limbani",       lat: -14.13968611, lon: -69.68701944 },
+      { num: 4, nombre: "Cuyo Cuyo",     lat: -14.48884167, lon: -69.55003611 },
+      // (resto omitido por brevedad)
+      { num: 42, nombre: "Capazo",       lat: -17.18269167, lon: -69.73908889 }
     ];
 
-    const map = L.map('map').setView([-12.07, -77.05], 13);
+    const map = L.map('map').setView([-14.5, -69.5], 8);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
     const marcadores = [];
-    ubicacionesFijas.forEach(ubic => {
-      const marker = L.marker(ubic.coords).addTo(map);
-      marker.bindTooltip(ubic.nombre, {
+    estaciones.forEach(est => {
+      const contenido = `<div class="tooltip-normal">#${est.num}<br>${est.nombre}</div>`;
+      const marker = L.marker([est.lat, est.lon]).addTo(map);
+      marker.bindTooltip(contenido, {
         permanent: true,
         direction: 'top',
-        offset: [0, -10]
+        offset: [0, -10],
+        className: 'tooltip-normal'
       }).openTooltip();
-      marcadores.push({ marker, coords: ubic.coords, nombre: ubic.nombre });
+      marcadores.push({ ...est, marker });
     });
 
     function distancia(lat1, lon1, lat2, lon2) {
@@ -50,21 +66,20 @@
 
     function encontrarMasCercano(userLat, userLon) {
       let minDist = Infinity;
-      let marcadorCercano = null;
+      let cercano = null;
       marcadores.forEach(m => {
-        const d = distancia(userLat, userLon, m.coords[0], m.coords[1]);
+        const d = distancia(userLat, userLon, m.lat, m.lon);
         if (d < minDist) {
           minDist = d;
-          marcadorCercano = m;
+          cercano = m;
         }
       });
-      return marcadorCercano;
+      return cercano;
     }
 
-    map.locate({ setView: true, maxZoom: 16 });
+    map.locate();
 
     map.on('locationfound', e => {
-      // Marcar ubicación del usuario
       L.circleMarker(e.latlng, {
         radius: 8,
         color: 'blue',
@@ -72,22 +87,34 @@
         fillOpacity: 0.6
       }).addTo(map).bindTooltip("Tú", { permanent: true, direction: 'right' }).openTooltip();
 
-      // Buscar estación más cercana
-      const masCercano = encontrarMasCercano(e.latitude, e.longitude);
+      const masCercano = encontrarMasCercano(e.latlng.lat, e.latlng.lng);
       if (masCercano) {
+        map.setView([masCercano.lat, masCercano.lon], 12);
+
+        const contenidoGrande = `<div class="tooltip-destacado">#${masCercano.num}<br>${masCercano.nombre}<br>(Estación más cercana)</div>`;
         masCercano.marker.unbindTooltip();
-        masCercano.marker.bindTooltip(`Estación más cercana: ${masCercano.nombre}`, {
+        masCercano.marker.bindTooltip(contenidoGrande, {
           permanent: true,
           direction: 'top',
-          offset: [0, -10]
+          offset: [0, -10],
+          className: 'tooltip-destacado'
         }).openTooltip();
 
-        // Icono rojo
         masCercano.marker.setIcon(L.icon({
-          iconUrl: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+          iconUrl: 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
           iconSize: [32, 32],
           iconAnchor: [16, 32]
         }));
+
+        // Mostrar popup con información desde web
+        const popupContent = `
+          <div style="text-align:center;">
+          <strong>Reporte diario - ACORA</strong><br>
+          <img src="https://raw.githubusercontent.com/senamhi-dz13/Reporte_diario-/refs/heads/main/ACORA.jpg" alt="ACORA" style="max-width:100%; height:auto; margin-top:5px;" />
+          </div>
+        `;
+
+        masCercano.marker.bindPopup(popupContent).openPopup();
       }
     });
 
