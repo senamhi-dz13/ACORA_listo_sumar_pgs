@@ -103,15 +103,15 @@
     }
 
     // Buscar estación San Gaban y asignar popup con imagen
-         const sanGaban = marcadores.find(m => m.nombre === "San Gaban")
-           if (sanGaban) {
-             const popupSanGaban = `
+         const Acora = marcadores.find(m => m.nombre === "Acora")
+           if (Acora) {
+             const popupAcora = `
              <div style="text-align:center;">
-             <strong>Reporte diario - San Gaban</strong><br>
-             <img src="https://raw.githubusercontent.com/senamhi-dz13/Reporte_diario-/refs/heads/main/ACORA.jpg" alt="San Gaban" style="max-width:100%; height:auto; margin-top:5px;" />
+             <strong>Reporte diario - Acora</strong><br>
+             <img src="https://raw.githubusercontent.com/senamhi-dz13/Reporte_diario-/refs/heads/main/ACORA.jpg" alt="Acora" style="max-width:100%; height:auto; margin-top:5px;" />
              </div>
              `;
-             sanGaban.marker.bindPopup(popupSanGaban);
+             Acora.marker.bindPopup(popupAcora);
            }
 
 
