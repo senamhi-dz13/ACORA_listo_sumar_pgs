@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Mapa con Ubicaciones Fijas</title>
+  <title>Mapa desde CSV con enlaces</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     #map { height: 100vh; }
@@ -15,54 +14,69 @@
     .tooltip-destacado {
       font-size: 15px;
       font-weight: bold;
-      color: teal;
+      color: purple;
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
-
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    const estaciones = [
-      { num: 1, nombre: "San Gaban",     lat: -13.46087222, lon: -70.40998611 },
-      { num: 2, nombre: "Tambopata",     lat: -14.22528611, lon: -69.16178333 },
-      { num: 3, nombre: "Limbani",       lat: -14.13968611, lon: -69.68701944 },
-      { num: 4, nombre: "Cuyo Cuyo",     lat: -14.48884167, lon: -69.55003611 },
-      // (resto omitido por brevedad)
-      { num: 42, nombre: "Capazo",       lat: -17.18269167, lon: -69.73908889 }
-    ];
-
     const map = L.map('map').setView([-14.5, -69.5], 8);
-
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
+    const linksPronostico = {
+      "Ayaviri": "https://www.senamhi.gob.pe/main.php?p=pronostico-detalle&dp=21&localidad=0043",
+      "Azangaro": "https://www.senamhi.gob.pe/main.php?p=pronostico-detalle&dp=21&localidad=0043",
+      "Cabanillas": "https://www.senamhi.gob.pe/main.php?p=pronostico-detalle&dp=21&localidad=0069"
+      // Añadir más estaciones aquí si se desea
+    };
+
     const marcadores = [];
-    estaciones.forEach(est => {
-      const contenido = `<div class="tooltip-normal">#${est.num}<br>${est.nombre}</div>`;
-      const marker = L.marker([est.lat, est.lon]).addTo(map);
-      marker.bindTooltip(contenido, {
-        permanent: true,
-        direction: 'top',
-        offset: [0, -10],
-        className: 'tooltip-normal'
-      }).openTooltip();
-      marcadores.push({ ...est, marker });
-    });
-// Buscar estación San Gaban y asignar popup con imagen
-const sanGaban = marcadores.find(m => m.nombre === "San Gaban");
-if (sanGaban) {
-  const popupSanGaban = `
-    <div style="text-align:center;">
-      <strong>Reporte diario - San Gaban</strong><br>
-      <img src="https://raw.githubusercontent.com/senamhi-dz13/Reporte_diario-/refs/heads/main/ACORA.jpg" alt="San Gaban" style="max-width:100%; height:auto; margin-top:5px;" />
-    </div>
-  `;
-  sanGaban.marker.bindPopup(popupSanGaban);
-}
+
+    fetch('https://raw.githubusercontent.com/senamhi-dz13/filecsv/main/reporte_diar.csv')
+      .then(response => response.text())
+      .then(csv => {
+        const filas = csv.trim().split('\n').slice(1);
+        filas.forEach((linea) => {
+          const [nombre, lat, lon] = linea.split(';');
+
+          const marker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(map);
+
+          // Tooltip normal con nombre
+          marker.bindTooltip(nombre, {
+            permanent: true,
+            direction: 'top',
+            offset: [0, -10],
+            className: 'tooltip-normal'
+          }).openTooltip();
+
+          // Popup con iframe si tiene link, o texto alternativo
+          const link = linksPronostico[nombre.trim()];
+          let popupContent = "";
+          if (link) {
+            popupContent = `
+              <div style="width:300px; height:200px;">
+                <iframe src="${link}" width="100%" height="100%" style="border:none;"></iframe>
+              </div>
+            `;
+          } else {
+            popupContent = `<div class="tooltip-normal">No hay enlace disponible para ${nombre}.</div>`;
+          }
+
+          marker.bindPopup(popupContent);
+
+          marcadores.push({
+            nombre,
+            lat: parseFloat(lat),
+            lon: parseFloat(lon),
+            link,
+            marker
+          });
+        });
+      });
 
     function distancia(lat1, lon1, lat2, lon2) {
       const R = 6371e3;
@@ -89,7 +103,6 @@ if (sanGaban) {
     }
 
     map.locate();
-
     map.on('locationfound', e => {
       L.circleMarker(e.latlng, {
         radius: 8,
@@ -100,9 +113,26 @@ if (sanGaban) {
 
       const masCercano = encontrarMasCercano(e.latlng.lat, e.latlng.lng);
       if (masCercano) {
-        map.setView([masCercano.lat, masCercano.lon], 12);
+        map.setView([masCercano.lat, masCercano.lon], 9);
 
-        const contenidoGrande = `<div class="tooltip-destacado">#${masCercano.num}<br>${masCercano.nombre}<br>(Estación más cercana)</div>`;
+        const link = masCercano.link;
+        let contenidoGrande;
+        if (link) {
+          contenidoGrande = `
+            <div class="tooltip-destacado">
+              ${masCercano.nombre}<br>
+              <iframe src="${link}" width="300" height="150" style="border:none;"></iframe>
+            </div>
+          `;
+        } else {
+          contenidoGrande = `
+            <div class="tooltip-destacado">
+              ${masCercano.nombre}<br>
+              No hay enlace disponible.
+            </div>
+          `;
+        }
+
         masCercano.marker.unbindTooltip();
         masCercano.marker.bindTooltip(contenidoGrande, {
           permanent: true,
@@ -110,20 +140,6 @@ if (sanGaban) {
           offset: [0, -10],
           className: 'tooltip-destacado'
         }).openTooltip();
-
-        masCercano.marker.setIcon(L.icon({
-          iconUrl: 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
-          iconSize: [32, 32],
-          iconAnchor: [16, 32]
-        }));
-       
-        // Mostrar popup con información desde web
-        const popupContent = `
-          <div style="width:300px; height:200px;">
-            <iframe src="https://www.wikipedia.org" width="100%" height="100%" style="border:none;"></iframe>
-          </div>
-        `;
-        masCercano.marker.bindPopup(popupContent).openPopup();
       }
     });
 
@@ -133,3 +149,4 @@ if (sanGaban) {
   </script>
 </body>
 </html>
+
