@@ -75,8 +75,20 @@
             link,
             marker
           });
+              // 👉 Aquí es donde debes poner lo de Acora
+          const Acora = marcadores.find(m => m.nombre.trim() === "Acora");
+          if (Acora) {
+            const popupAcora = `
+            <div style="text-align:center;">
+            <strong>Reporte diario - Acora</strong><br>
+            <img src="https://raw.githubusercontent.com/senamhi-dz13/Reporte_diario-/main/ACORA.jpg" alt="Acora" style="max-width:100%; height:auto; margin-top:5px;" />
+            </div>
+            `;
+            Acora.marker.bindPopup(popupAcora);
+          }
         });
       });
+
 
     function distancia(lat1, lon1, lat2, lon2) {
       const R = 6371e3;
