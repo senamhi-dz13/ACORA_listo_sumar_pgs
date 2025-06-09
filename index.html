@@ -79,7 +79,9 @@
             link,
             marker
           });
-              // 👉 Aquí es donde debes poner lo de Acora
+        });
+        
+          // ✅ Mover aquí: luego que marcadores[] ya está completo
           const Acora = marcadores.find(m => m.nombre.trim() === "Acora");
           if (Acora) {
             const popupAcora = `
@@ -89,8 +91,7 @@
             </div>
             `;
             Acora.marker.bindPopup(popupAcora);
-          }
-        });
+          }      
       });
 
 
