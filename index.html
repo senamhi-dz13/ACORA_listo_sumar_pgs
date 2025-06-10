@@ -170,12 +170,13 @@
         }
 
         masCercano.marker.unbindTooltip();
-        masCercano.marker.bindTooltip(contenidoGrande, {
-          permanent: true,
-          direction: 'top',
-          offset: [0, -10],
-          className: 'tooltip-destacado'
-        }).openTooltip();
+        masCercano.marker.bindPopup(`
+        <div class="tooltip-destacado">
+          ${masCercano.nombre}<br>
+          <iframe src="${masCercano.link}" width="300" height="150" style="border:none;"></iframe>
+        </div>
+      `).openPopup();
+
       }
     });
 
